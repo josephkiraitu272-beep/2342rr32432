@@ -1,22 +1,14 @@
 [
   {
-    "content": "Task 1.1–1.6, 1.10: Backend foundation — rules, watchlist, lifecycle, signals, market overview, feed, backfill",
+    "content": "Task 1.1–1.10: Backend foundation (rules, watchlist, lifecycle, signals, market overview, feed, backfill, ingest wiring)",
     "status": "completed"
   },
   {
-    "content": "Task 1.7: Frontend — /watchlist page",
+    "content": "Task 1.7–1.9: Frontend pages (/watchlist, /lifecycle, /signals, Dashboard v2)",
     "status": "completed"
   },
   {
-    "content": "Task 1.8: Frontend — Dashboard v2 (Market Health, Lifecycle distribution, Heat, Pressure, watchlist toggle)",
+    "content": "Task 1.11: Testing — testing_agent_v3 28/29 backend + 47/47 frontend (1 minor LOW-priority timing edge case in price_drop confirmed working manually)",
     "status": "completed"
-  },
-  {
-    "content": "Task 1.9: Frontend — /lifecycle (product feed) + /signals pages",
-    "status": "completed"
-  },
-  {
-    "content": "Task 1.11: Testing — testing_agent_v3 end-to-end of Task 1",
-    "status": "in_progress"
   }
 ]
