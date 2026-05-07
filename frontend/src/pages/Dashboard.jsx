@@ -31,10 +31,12 @@ import {
     getLifecycleSummary,
     getMarketHeat,
     getSellerPressure,
+    getOpportunities,
     LIFECYCLE_LABELS,
     LIFECYCLE_STYLES,
 } from "@/lib/api";
 import { LifecycleChip } from "@/components/IntelChips";
+import { ScoreBlock } from "@/components/ScoreChip";
 
 // Vibrant chart palette — readable, distinct
 const CHART_COLORS = ["#f97316", "#dc2626", "#2563eb", "#16a34a", "#a855f7"];
@@ -180,6 +182,7 @@ export default function Dashboard() {
     const [lifecycle, setLifecycle] = useState(null);
     const [heat, setHeat] = useState([]);
     const [pressure, setPressure] = useState([]);
+    const [topOpportunities, setTopOpportunities] = useState([]);
     const [watchlistOnly, setWatchlistOnly] = useState(false);
     const [loading, setLoading] = useState(true);
     const [refreshedAt, setRefreshedAt] = useState(Date.now());
@@ -188,7 +191,7 @@ export default function Dashboard() {
     const refresh = async () => {
         setLoading(true);
         try {
-            const [s, td, t, d, p, dr, tdsc, sig, mov, lc, mh, sp] = await Promise.all([
+            const [s, td, t, d, p, dr, tdsc, sig, mov, lc, mh, sp, opps] = await Promise.all([
                 getSummary(),
                 getToday(),
                 getTopSellers(8),
@@ -209,6 +212,9 @@ export default function Dashboard() {
                 getSellerPressure({ watchlistOnly, windowDays: 7, limit: 8 }).then(
                     (r) => r.items,
                 ),
+                getOpportunities("trending", { watchlistOnly, limit: 5 }).then(
+                    (r) => r.items,
+                ),
             ]);
             setSummary(s);
             setToday(td);
@@ -222,6 +228,7 @@ export default function Dashboard() {
             setLifecycle(lc);
             setHeat(mh);
             setPressure(sp);
+            setTopOpportunities(opps || []);
             setRefreshedAt(Date.now());
         } catch (e) {
             console.error(e);
@@ -670,6 +677,72 @@ export default function Dashboard() {
                                 </tbody>
                             </table>
                         </div>
+                    )}
+                </div>
+                {/* Top opportunities teaser */}
+                <div className="guru-card p-6" data-testid="top-opportunities-card">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-neutral-950">
+                                Топ можливості
+                            </h2>
+                            <div className="text-sm text-neutral-500">
+                                Високий opportunity-score, низький ризик · 4-score модель
+                            </div>
+                        </div>
+                        <Link
+                            to="/opportunities"
+                            className="text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1"
+                        >
+                            Усі можливості <ArrowUpRight size={14} />
+                        </Link>
+                    </div>
+                    {topOpportunities.length === 0 ? (
+                        <EmptyHint>
+                            Можливості з’являться, як тільки буде зібрано достатньо даних для
+                            score (≥2 знімків на товар, ≥3 товарів у категорії).
+                        </EmptyHint>
+                    ) : (
+                        <ul className="grid lg:grid-cols-2 gap-3" data-testid="top-opportunities-items">
+                            {topOpportunities.map((o, i) => (
+                                <li
+                                    key={o.product_key}
+                                    data-testid={`top-opp-${i}`}
+                                    className="flex items-start gap-3 p-3 rounded-lg border border-neutral-200 bg-white hover:border-orange-300 hover:shadow-sm transition-all"
+                                >
+                                    {o.image ? (
+                                        <img
+                                            src={o.image}
+                                            alt=""
+                                            className="w-12 h-12 object-cover rounded border border-neutral-200 flex-shrink-0"
+                                        />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded bg-neutral-100 flex-shrink-0" />
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <a
+                                            href={o.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="font-medium text-neutral-950 hover:underline block truncate"
+                                        >
+                                            {o.title}
+                                        </a>
+                                        <div className="text-xs text-neutral-500 font-mono mt-0.5 truncate">
+                                            {o.seller || "—"}
+                                            {o.price ? (
+                                                <span className="ml-2">
+                                                    {Math.round(o.price)} ₴
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                        <div className="mt-2">
+                                            <ScoreBlock scoring={o} />
+                                        </div>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
                     )}
                 </div>
             </div>

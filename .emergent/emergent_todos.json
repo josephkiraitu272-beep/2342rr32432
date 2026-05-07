@@ -1,14 +1,26 @@
 [
   {
-    "content": "Task 1.1–1.10: Backend foundation (rules, watchlist, lifecycle, signals, market overview, feed, backfill, ingest wiring)",
+    "content": "Task 2.1–2.5: Backend scoring (rules, scoring.py, scoring_api.py, score_snapshots, ingest wiring, feed extension)",
     "status": "completed"
   },
   {
-    "content": "Task 1.7–1.9: Frontend pages (/watchlist, /lifecycle, /signals, Dashboard v2)",
+    "content": "Task 2.6: Frontend — ScoreChip + ScoreBlock + ScoreReasonsPopover",
     "status": "completed"
   },
   {
-    "content": "Task 1.11: Testing — testing_agent_v3 28/29 backend + 47/47 frontend (1 minor LOW-priority timing edge case in price_drop confirmed working manually)",
+    "content": "Task 2.7: Frontend — /opportunities страница с 4 секциями + Categories table",
     "status": "completed"
+  },
+  {
+    "content": "Task 2.8: Frontend — скоры в /lifecycle фид + Dashboard 'Top opportunities' teaser",
+    "status": "completed"
+  },
+  {
+    "content": "Task 2.9: Frontend — Layout nav + App.js routes",
+    "status": "completed"
+  },
+  {
+    "content": "Task 2.10: Testing — testing_agent_v3",
+    "status": "in_progress"
   }
 ]

@@ -6,179 +6,116 @@
 #====================================================================================================
 
 user_problem_statement: |
-  Marketplace Intelligence CRM (Guru / Призма) for Rozetka & Epicentr.
-  Task 1 — Foundation Analytics Layer:
-   - config/rules.py with documented thresholds
-   - Watchlist (Tracked Categories) CRUD + UI
-   - Lifecycle Engine (new, active, out_of_stock, removed, returned, declining, growing)
-   - Market Signals Engine (price_drop, price_rise, new_product, returned_product,
-     stock_out, back_in_stock, promo_detected, top_sales_detected)
-   - Market Overview v2 (new vs removed, market heat, seller pressure, promo activity)
-   - Product Feed Intelligence (lifecycle + signals + reasons "Why")
+  Marketplace Intelligence CRM (Guru / Призма). Task 2 — Market Scoring Engine.
+  Four explainable scores per product (0..100 + level HIGH/MED/LOW + reasons[]):
+    • Demand — does the market want this?
+    • Competition — how crowded?
+    • Risk — how dangerous?
+    • Opportunity — combination + situational bonuses.
+  Score history via score_snapshots (6h-bucket dedup). Category-level scoring.
+  Opportunities feed with 4 sections: trending, emerging, stable winners, high risk.
 
 backend:
-  - task: "config/rules.py — thresholds with docs"
+  - task: "scoring rules + service"
     implemented: true
     working: true
-    file: "/app/backend/config/rules.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: false
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Sane defaults baked in: NEW_PRODUCT_DAYS=7, REMOVED_AFTER_DAYS=14, PRICE_DROP_PCT=5.0, etc."
-  - task: "Watchlist CRUD"
-    implemented: true
-    working: true
-    file: "/app/backend/services/intelligence_api.py"
-    stuck_count: 0
-    priority: "high"
+    file: "/app/backend/services/scoring.py"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "GET/POST/PATCH/DELETE /api/watchlist + GET /api/watchlist/categories (auto-discovery from observed products). Smoke-tested via curl."
-  - task: "Lifecycle Engine"
+        comment: "compute_product_scores returns demand/competition/risk/opportunity each {score,level,reasons[]}; opportunity uses combination formula + floor checks; compute_category_scores aggregates per category with hot-bonus."
+  - task: "scoring API endpoints"
     implemented: true
     working: true
-    file: "/app/backend/services/lifecycle.py"
-    stuck_count: 0
-    priority: "high"
+    file: "/app/backend/services/scoring_api.py"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "compute_lifecycle() — derives status + reasons from snapshot history. /api/lifecycle/summary, /lifecycle/feed, /lifecycle/products/{key}. Smoke test confirms new/out_of_stock buckets."
-  - task: "Market Signals Engine"
-    implemented: true
-    working: true
-    file: "/app/backend/services/signals.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "build_signals_for_ingest() emits new_product, returned_product, promo/top_sales, price_drop/rise, stock_out/back_in_stock. Idempotent via dedup_key (kind+pk+day). Persisted on every ingest. /api/signals + /api/signals/summary."
-  - task: "Market Overview v2 endpoints"
-    implemented: true
-    working: true
-    file: "/app/backend/services/intelligence_api.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "/api/market/overview, /market/heat, /market/seller-pressure, /market/promo. Honor watchlist_only and source filters. Smoke-tested with seed data → returned correct counts."
-  - task: "Product Feed Intelligence (joined)"
-    implemented: true
-    working: true
-    file: "/app/backend/services/intelligence_api.py"
-    stuck_count: 0
-    priority: "high"
-    needs_retesting: true
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "/api/feed/products joins lifecycle + last 7 days signals per product. Filterable by lifecycle, signal_kind, watchlist."
-  - task: "Backfill /api/admin/backfill"
-    implemented: true
-    working: true
-    file: "/app/backend/services/intelligence_api.py"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
-    status_history:
-      - working: true
-        agent: "main"
-        comment: "Recomputes first/last_seen on products from price_snapshots; emits NEW_PRODUCT signal for any historical product missing it."
-  - task: "Ingest path emits signals + lifecycle dates"
+        comment: "GET /api/scoring/products/{key}, /scoring/products/{key}/history, /scoring/categories, /opportunities/{trending,risk,stable,emerging}. Watchlist/source filters."
+  - task: "score_snapshots persistence on ingest"
     implemented: true
     working: true
     file: "/app/backend/server.py"
-    stuck_count: 0
-    priority: "high"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "POST /api/ingest/product and /products now call _stamp_lifecycle_dates and _emit_market_signals after _record_price_snapshots. Existing tests for /summary, /price-changes, /export remain intact."
+        comment: "_record_score_snapshots called after _emit_market_signals. Idempotent per (product_key, 6h-bucket)."
+  - task: "feed/products extended with scores"
+    implemented: true
+    working: true
+    file: "/app/backend/services/intelligence_api.py"
+    needs_retesting: true
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Each item now carries demand/competition/risk/opportunity blocks + market_context."
 
 frontend:
-  - task: "/watchlist page"
+  - task: "ScoreChip / ScoreBlock / ScoreReasonsPopover"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/Watchlist.jsx"
-    stuck_count: 0
-    priority: "high"
+    file: "/app/frontend/src/components/ScoreChip.jsx"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Add by name + source filter. Active list with toggle/priority/delete. Discovered categories from observed products. data-testid wired for all interactions."
-  - task: "Dashboard v2 — Market Health blocks + watchlist toggle"
+        comment: "data-testid=score-chip-{kind}-{level} on each chip. Reasons popover lists weighted contributions."
+  - task: "/opportunities page (4 tabs + categories table)"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/Dashboard.jsx"
-    stuck_count: 0
-    priority: "high"
+    file: "/app/frontend/src/pages/Opportunities.jsx"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Added Market Health 7d KPIs strip (new/returned/removed/stock_outs/promo/drops), Lifecycle distribution card, Market Heat card, Seller Pressure table. dashboard-watchlist-toggle filters all of them. Existing dataloop/distribution/sellers blocks unchanged."
-  - task: "/lifecycle page (Product Feed)"
+        comment: "Tabs: Трендові, Нові та зростаючі, Стабільні лідери, Високий ризик. Categories table with 4 score badges per row. Source + watchlist toggles."
+  - task: "Lifecycle table — Scores column + Why popover"
     implemented: true
     working: true
     file: "/app/frontend/src/pages/Lifecycle.jsx"
-    stuck_count: 0
-    priority: "high"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Table with Lifecycle chip, Signal chips, Why? popover (reasons + first_seen + snapshots), price delta arrow, source/category, history modal. Filters: lifecycle bucket, source, watchlist toggle, search."
-  - task: "/signals page"
+        comment: "New 'Scores' column with ScoreBlock + score-why button (data-testid=score-why-{key})."
+  - task: "Dashboard — Top opportunities teaser"
     implemented: true
     working: true
-    file: "/app/frontend/src/pages/Signals.jsx"
-    stuck_count: 0
-    priority: "high"
+    file: "/app/frontend/src/pages/Dashboard.jsx"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Summary by kind + filter pills + sinceHours window selector + watchlist toggle. List with image/title/detail/seller/category. Auto-refresh 30s. data-testid wired."
-  - task: "Layout nav extended (Watchlist / Lifecycle / Signals)"
+        comment: "data-testid=top-opportunities-card with up to 5 items. Reflows on watchlist toggle."
+  - task: "Layout nav — Можливості entry"
     implemented: true
     working: true
     file: "/app/frontend/src/components/Layout.jsx"
-    stuck_count: 0
-    priority: "medium"
     needs_retesting: true
     status_history:
       - working: true
         agent: "main"
-        comment: "Removed 'Розширення' from main nav (still in /install via header CTA), added Watchlist / Lifecycle / Сигнали."
+        comment: "Sparkles icon, /opportunities route registered in App.js."
 
 metadata:
   created_by: "main_agent"
-  version: "0.5.0"
-  test_sequence: 1
+  version: "0.6.0"
+  test_sequence: 2
   run_ui: true
 
 test_plan:
   current_focus:
-    - "Watchlist CRUD (POST/PATCH/DELETE/list/categories)"
-    - "Ingest emits signals + lifecycle"
-    - "Lifecycle summary/feed correctness with watchlist filter"
-    - "Signals filter by kind/window/watchlist"
-    - "Market Overview v2 + Heat + Pressure aggregations"
-    - "Product Feed Intelligence joined response"
-    - "Frontend: /watchlist add+toggle+delete, dashboard v2 with watchlist toggle, /lifecycle Why? popover, /signals filters"
-    - "Existing endpoints regression: /api/products, /analytics/summary, /export/products.csv"
+    - "GET /api/scoring/products/{key} returns demand+competition+risk+opportunity blocks with reasons[]"
+    - "Opportunities endpoints return correctly filtered lists (trending/emerging/stable/risk)"
+    - "Category scoring: categories with <3 products return level=unknown; categories with ≥3 products produce real scores"
+    - "score_snapshots collection populates after each ingest, with proper dedup (6h bucket)"
+    - "Watchlist toggle on /opportunities and /lifecycle and Dashboard reflows"
+    - "Frontend: ScoreBlock chips render in Opportunities, Lifecycle, and Dashboard teaser"
+    - "Frontend: 'чому?' popover on Opportunities + ? button on Lifecycle Scores cell shows reasons[]"
+    - "Regression: /api/feed/products items now contain scores; /api/lifecycle/* still works; existing /api/analytics/* unchanged"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -186,17 +123,18 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: |
-      Task 1 (Foundation Analytics Layer) implemented and smoke-tested via curl + manual screenshots.
-      Backend: 12 new endpoints across 3 modules (config/rules.py, services/lifecycle.py, services/signals.py, services/intelligence_api.py).
-      Ingest path now stamps first_seen_at/last_seen_at on products and emits market_signals (idempotent via dedup_key).
-      Frontend: 3 new pages (Watchlist, Lifecycle, Signals) + Dashboard v2 blocks (Market Health, Lifecycle distribution, Heat, Pressure) + watchlist toggle.
+      Task 2 done. Deterministic 4-score model wired in:
+      Backend: 4 new endpoint groups (scoring/products, scoring/categories, opportunities/{trending,risk,stable,emerging}). score_snapshots collection + indexes added. Ingest path recomputes scores and stores 6h-bucket dedup'd snapshots.
+      Frontend: /opportunities page with 4 tabs + categories scoring table. ScoreChip(s) added to /lifecycle, Dashboard, and Opportunities.
+      Smoke test (curl) confirmed: iPhone score = demand 68 HIGH, competition 34 MED, risk 3 LOW, opportunity 70.2 HIGH. Categories returned Смартфони 74.1 HIGH; Ноутбуки = unknown (only 2 products → below CATEGORY_DEMAND_MIN_PRODUCTS=3).
 
-      User stories (from product spec) to validate end-to-end:
-        US-1 PM Аналітик: opens Огляд → sees Market Health 7d, Lifecycle distribution, Heat, Pressure → toggles "Watchlist" → numbers reflect only tracked categories.
-        US-2 Маркетолог: opens Сигнали → filters by "Реклама" → sees promo signals only; switches window to 7 днів.
-        US-3 Категорийник: opens Watchlist → adds "Смартфони" (rozetka) → goes to Lifecycle → toggles "Тільки watchlist" → only smartphone-tracked products in feed.
-        US-4 Decision foundation: opens /lifecycle → clicks Why? on a row → sees reasons (e.g., "Вперше зафіксовано 2.1 дн. тому") + first_seen + snapshots.
+      User stories to validate:
+        US-A: Cat manager opens /opportunities → sees Trending tab default → 4 score chips per item, "чому?" expands reasons.
+        US-B: Switches to Емерджентні tab → only new+growing products with demand≥med.
+        US-C: Switches to Ризик → only items with risk≥med, sorted DESC by risk.
+        US-D: Categories table sorts by opportunity DESC; categories <3 products show "—".
+        US-E: Dashboard "Топ можливості" teaser shows up to 5 items with score chips.
+        US-F: Lifecycle table now has Scores column with chips + ? popover.
 
-      Auth: ingest endpoints require X-Extension-Api-Key=prizma_dev_key_2026 (already in /app/backend/.env). Read endpoints are open (MVP design).
-
+      Auth: ingest endpoints still require X-Extension-Api-Key. Read endpoints open.
       Mocked APIs: NONE.

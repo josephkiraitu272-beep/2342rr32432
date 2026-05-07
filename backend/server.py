@@ -28,6 +28,9 @@ from urllib.parse import urlparse
 
 from services.signals import build_signals_for_ingest
 from services.intelligence_api import make_router as make_intelligence_router
+from services.scoring import compute_product_scores
+from services.lifecycle import compute_lifecycle
+from services.scoring_api import make_scoring_router, record_score_snapshot
 
 
 ROOT_DIR = Path(__file__).parent
@@ -278,6 +281,44 @@ async def _emit_market_signals(docs: List[Dict[str, Any]]) -> None:
             logging.getLogger("guru.signals").warning("signal upsert failed: %s", e)
 
 
+async def _record_score_snapshots(docs: List[Dict[str, Any]]) -> None:
+    """Compute & store score snapshots (Task 2). 6h-bucket dedup'd per product."""
+    if not docs:
+        return
+    for d in docs:
+        pk = d.get("product_key")
+        if not pk:
+            continue
+        try:
+            cur = (
+                db.price_snapshots.find({"product_key": pk}, {"_id": 0})
+                .sort("captured_at", 1)
+            )
+            history = await cur.to_list(2000)
+            life = compute_lifecycle(pk, d, history)
+            cutoff = (datetime.now(timezone.utc) - timedelta(days=14)).isoformat()
+            sigs_cur = db.market_signals.find(
+                {"product_key": pk, "captured_at": {"$gte": cutoff}}, {"_id": 0}
+            ).sort("captured_at", -1)
+            sigs = await sigs_cur.to_list(500)
+            cat_root = (d.get("category_path") or [None])[0] or d.get("category")
+            category_sellers = 0
+            if cat_root:
+                cs = await db.products.distinct(
+                    "seller",
+                    {"$or": [{"category_path": cat_root}, {"category": cat_root}],
+                     "seller": {"$ne": None}},
+                )
+                category_sellers = len(cs)
+            scored = compute_product_scores(
+                d, history, life["lifecycle_status"], signals=sigs,
+                same_category_sellers=category_sellers,
+            )
+            await record_score_snapshot(db, scored)
+        except Exception as e:
+            logging.getLogger("guru.scoring").warning("score snapshot failed for %s: %s", pk, e)
+
+
 # ---------- Routes ----------
 
 @api_router.get("/")
@@ -297,6 +338,7 @@ async def ingest_product(payload: ProductIn, _: bool = Depends(require_extension
     await _record_price_snapshots([doc])
     await _stamp_lifecycle_dates([doc])
     await _emit_market_signals([doc])
+    await _record_score_snapshots([doc])
     return {"ok": True, "id": doc["id"], "product_key": doc["product_key"]}
 
 
@@ -315,6 +357,7 @@ async def ingest_products(payload: IngestProductsRequest, _: bool = Depends(requ
     await _record_price_snapshots(docs)
     await _stamp_lifecycle_dates(docs)
     await _emit_market_signals(docs)
+    await _record_score_snapshots(docs)
     return {
         "ok": True,
         "inserted": len(docs),
@@ -1294,6 +1337,8 @@ async def export_products_xlsx(
 app.include_router(api_router)
 # Task 1 — Foundation Analytics Layer (watchlist, lifecycle, signals, market overview v2, feed)
 app.include_router(make_intelligence_router(db, require_extension_key))
+# Task 2 — Market Scoring Engine (4-score model + opportunities + categories)
+app.include_router(make_scoring_router(db))
 
 app.add_middleware(
     CORSMiddleware,
@@ -1335,6 +1380,11 @@ async def ensure_indexes():
         await db.market_signals.create_index("dedup_key", unique=True)
         await db.watchlists.create_index("category_key")
         await db.watchlists.create_index("enabled")
+        # Task 2 — score snapshots
+        await db.score_snapshots.create_index("product_key")
+        await db.score_snapshots.create_index("computed_at")
+        await db.score_snapshots.create_index("dedup_key", unique=True)
+        await db.score_snapshots.create_index([("product_key", 1), ("computed_at", 1)])
         logger.info("Indexes ensured")
     except Exception as e:
         logger.warning("Index creation skipped: %s", e)

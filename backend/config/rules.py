@@ -78,6 +78,101 @@ DEMAND_POSITION_WEIGHT: Final[float] = 10.0
 DEMAND_SELLER_COMPETITION_WEIGHT: Final[float] = 10.0
 
 
+# ---------- Task 2 — Market Scoring Engine ----------
+#
+# Four scores, all on a 0..100 scale, all explainable (reasons[]).
+# Levels: HIGH (>=66), MED (33..66), LOW (<33). Strict thresholds in SCORE_LEVEL_*.
+#
+# Each weight tells "how many points a single piece of evidence contributes".
+# Total per score is clipped at 100. Sum of weights does NOT need to equal 100 —
+# we cap on output, so missing evidence reduces score, abundant evidence does not
+# inflate beyond ceiling.
+
+SCORE_LEVEL_HIGH: Final[float] = 66.0
+SCORE_LEVEL_MED: Final[float] = 33.0
+
+
+def score_level(value: float) -> str:
+    """Map numeric score to HIGH/MED/LOW."""
+    if value is None:
+        return "unknown"
+    if value >= SCORE_LEVEL_HIGH:
+        return "high"
+    if value >= SCORE_LEVEL_MED:
+        return "med"
+    return "low"
+
+
+# --- Demand evidence weights ---
+# "Does the market want this product?"
+DEMAND_W_TOP_SALES_BADGE: Final[float] = 25.0
+DEMAND_W_PROMO_BADGE: Final[float] = 8.0          # promo presence is weak demand signal
+DEMAND_W_REVIEWS_HIGH: Final[float] = 18.0         # >= 100 reviews
+DEMAND_W_REVIEWS_MID: Final[float] = 10.0          # 30..99 reviews
+DEMAND_W_RATING_HIGH: Final[float] = 12.0          # >= 4.5
+DEMAND_W_RATING_MID: Final[float] = 6.0            # 4.0..4.5
+DEMAND_W_AVAILABILITY: Final[float] = 8.0          # in stock latched
+DEMAND_W_GROWING_LIFECYCLE: Final[float] = 20.0    # lifecycle == growing
+DEMAND_W_RECENT_PRICE_DROP: Final[float] = 5.0     # price drop in last window (signal of demand reaction)
+DEMAND_W_LONG_TRACKED: Final[float] = 8.0          # >= 10 snapshots — popular enough to keep collecting
+
+# Penalties on demand
+DEMAND_P_OUT_OF_STOCK: Final[float] = 25.0
+DEMAND_P_DECLINING_LIFECYCLE: Final[float] = 20.0
+DEMAND_P_REMOVED: Final[float] = 60.0
+
+
+# --- Competition evidence weights ---
+# "How crowded is this market?"
+COMPETITION_W_MANY_SELLERS_VHIGH: Final[float] = 30.0   # >= 8 sellers seen carrying product/category
+COMPETITION_W_MANY_SELLERS_HIGH: Final[float] = 22.0    # 5..7
+COMPETITION_W_MANY_SELLERS_MED: Final[float] = 10.0     # 3..4
+COMPETITION_W_HIGH_DISCOUNT: Final[float] = 18.0        # discount_percent >= 15%
+COMPETITION_W_MID_DISCOUNT: Final[float] = 8.0          # 5..15%
+COMPETITION_W_PROMO_PRESSURE: Final[float] = 12.0       # >=2 promo signals in window for THIS product/category
+COMPETITION_W_PRICE_VOLATILITY_HIGH: Final[float] = 15.0  # |price std/avg| > 10%
+COMPETITION_W_PRICE_VOLATILITY_MED: Final[float] = 6.0    # 5..10%
+COMPETITION_W_FREQUENT_DROPS: Final[float] = 10.0       # >=2 price_drop signals in window
+
+
+# --- Risk evidence weights ---
+# "How dangerous is it to enter / hold this product?"
+RISK_W_DECLINING: Final[float] = 30.0
+RISK_W_REMOVED: Final[float] = 60.0
+RISK_W_OUT_OF_STOCK: Final[float] = 18.0
+RISK_W_PRICE_WAR: Final[float] = 25.0                # price-volatility HIGH AND many sellers
+RISK_W_AGGRESSIVE_DISCOUNTS: Final[float] = 20.0     # discount_percent >= 25%
+RISK_W_FREQUENT_RISES: Final[float] = 8.0            # >=2 price_rise signals (could be inflation, supply issues)
+RISK_W_LOW_RATING: Final[float] = 15.0               # rating < 4.0 with reviews >= 20
+RISK_W_FEW_REVIEWS_NEW: Final[float] = 6.0           # new product, no reviews yet — uncertainty
+
+
+# --- Opportunity composition ---
+# Opportunity is a *combination*, not a sum. We compute it from the other three:
+#   opportunity = clip(demand - competition*0.6 - risk*0.7, 0..100)
+# But we ALSO require at least these floors to qualify as HIGH:
+OPPORTUNITY_MIN_DEMAND_FOR_HIGH: Final[float] = 50.0
+OPPORTUNITY_MAX_RISK_FOR_HIGH: Final[float] = 35.0
+OPPORTUNITY_MAX_COMPETITION_FOR_HIGH: Final[float] = 55.0
+
+# Bonus tags (additive, capped via clip)
+OPPORTUNITY_W_FEW_SELLERS: Final[float] = 15.0       # <= 2 sellers in category
+OPPORTUNITY_W_GROWING: Final[float] = 12.0
+OPPORTUNITY_W_NEW_PRODUCT: Final[float] = 10.0
+OPPORTUNITY_W_STABLE_PRICE: Final[float] = 6.0       # price std/avg < 2%
+
+
+# --- Category-level scoring thresholds ---
+CATEGORY_DEMAND_MIN_PRODUCTS: Final[int] = 3         # smaller categories cannot score reliably
+CATEGORY_VOLATILITY_HIGH_PCT: Final[float] = 8.0     # std/avg of prices, %
+CATEGORY_VOLATILITY_MED_PCT: Final[float] = 4.0
+CATEGORY_HOT_NEW_PRODUCTS: Final[int] = 3            # >= N new products in 7d → "hot"
+
+
+# --- Score snapshot dedup ---
+SCORE_SNAPSHOT_DEDUP_HOURS: Final[int] = 6           # one snapshot per product per 6h window
+
+
 # ---------- Signal kinds (canonical) ----------
 
 SIGNAL_NEW_PRODUCT = "new_product"

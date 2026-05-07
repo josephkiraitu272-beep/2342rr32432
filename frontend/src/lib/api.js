@@ -213,6 +213,58 @@ export async function runBackfill(apiKey) {
     return r.data;
 }
 
+// ---- Scoring (Task 2) ----
+export async function getProductScores(productKey) {
+    const r = await api.get(`/scoring/products/${encodeURIComponent(productKey)}`);
+    return r.data;
+}
+export async function getProductScoreHistory(productKey, limit = 200) {
+    const r = await api.get(
+        `/scoring/products/${encodeURIComponent(productKey)}/history`,
+        { params: { limit } },
+    );
+    return r.data;
+}
+export async function getCategoryScoring({ watchlistOnly = false, source, limit = 20 } = {}) {
+    const params = { limit, watchlist_only: watchlistOnly };
+    if (source) params.source = source;
+    const r = await api.get("/scoring/categories", { params });
+    return r.data;
+}
+export async function getOpportunities(kind, { watchlistOnly = false, source, limit = 20 } = {}) {
+    const params = { limit, watchlist_only: watchlistOnly };
+    if (source) params.source = source;
+    const r = await api.get(`/opportunities/${kind}`, { params });
+    return r.data;
+}
+
+export const SCORE_LEVEL_LABELS = {
+    high: "HIGH",
+    med: "MED",
+    low: "LOW",
+    unknown: "—",
+};
+
+export const SCORE_LEVEL_STYLES = {
+    // demand: green = good
+    demand_high: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    demand_med: "bg-amber-50 border-amber-200 text-amber-800",
+    demand_low: "bg-neutral-100 border-neutral-200 text-neutral-600",
+    // competition: rose = bad to be high
+    competition_high: "bg-rose-50 border-rose-200 text-rose-700",
+    competition_med: "bg-amber-50 border-amber-200 text-amber-800",
+    competition_low: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    // risk: rose
+    risk_high: "bg-rose-100 border-rose-300 text-rose-800",
+    risk_med: "bg-amber-50 border-amber-200 text-amber-800",
+    risk_low: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    // opportunity: violet/orange — good to be high
+    opportunity_high: "bg-orange-100 border-orange-300 text-orange-800",
+    opportunity_med: "bg-amber-50 border-amber-200 text-amber-800",
+    opportunity_low: "bg-neutral-100 border-neutral-200 text-neutral-600",
+    unknown: "bg-neutral-100 border-neutral-200 text-neutral-500",
+};
+
 // ---- Lifecycle / Signal labels (mirror config/rules.py) ----
 export const LIFECYCLE_LABELS = {
     new: "Новинка",

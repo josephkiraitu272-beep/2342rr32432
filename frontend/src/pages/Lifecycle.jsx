@@ -17,6 +17,7 @@ import {
     LIFECYCLE_STYLES,
 } from "@/lib/api";
 import { LifecycleChip, SignalChip } from "@/components/IntelChips";
+import { ScoreBlock, ScoreReasonsPopover } from "@/components/ScoreChip";
 import ProductHistoryModal from "@/components/ProductHistoryModal";
 
 function SourceBadge({ source }) {
@@ -171,6 +172,7 @@ export default function Lifecycle() {
                             <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-mono">
                                 <th className="py-3 px-4">Товар</th>
                                 <th className="py-3 px-4">Lifecycle</th>
+                                <th className="py-3 px-4">Scores</th>
                                 <th className="py-3 px-4">Signals</th>
                                 <th className="py-3 px-4">Продавець</th>
                                 <th className="py-3 px-4 text-right">Ціна</th>
@@ -259,6 +261,9 @@ export default function Lifecycle() {
                                                 </div>
                                             )}
                                         </td>
+                                        <td className="py-3 px-4 relative">
+                                            <ScoresCell row={p} />
+                                        </td>
                                         <td className="py-3 px-4">
                                             <div className="flex flex-wrap gap-1">
                                                 {(p.signals || []).slice(0, 4).map((s, i) => (
@@ -338,6 +343,27 @@ export default function Lifecycle() {
                     onClose={() => setHistoryKey(null)}
                 />
             ) : null}
+        </div>
+    );
+}
+
+function ScoresCell({ row }) {
+    const [open, setOpen] = useState(false);
+    if (!row?.opportunity) return <span className="text-xs text-neutral-400">—</span>;
+    return (
+        <div className="relative">
+            <div className="flex items-center gap-1.5">
+                <ScoreBlock scoring={row} />
+                <button
+                    onClick={() => setOpen(!open)}
+                    data-testid={`score-why-${row.product_key}`}
+                    className="text-neutral-400 hover:text-orange-600 p-0.5 rounded"
+                    title="Чому?"
+                >
+                    <HelpCircle size={13} />
+                </button>
+            </div>
+            {open ? <ScoreReasonsPopover scoring={row} /> : null}
         </div>
     );
 }

@@ -9,10 +9,12 @@ import {
     Bell,
     ListFilter,
     Activity,
+    Sparkles,
 } from "lucide-react";
 
 const NAV = [
     { to: "/", label: "Огляд", icon: LayoutDashboard, end: true },
+    { to: "/opportunities", label: "Можливості", icon: Sparkles },
     { to: "/watchlist", label: "Watchlist", icon: ListFilter },
     { to: "/lifecycle", label: "Lifecycle", icon: Activity },
     { to: "/signals", label: "Сигнали", icon: Bell },

@@ -24,6 +24,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from config import rules as R
 from services.lifecycle import compute_lifecycle
 from services.signals import build_signals_for_ingest
+from services.scoring import compute_product_scores
 
 log = logging.getLogger("guru.intelligence")
 
@@ -616,7 +617,30 @@ def make_router(db, require_extension_key) -> APIRouter:
                 continue
             if signal_kind and not any(s["kind"] == signal_kind for s in sigs):
                 continue
-            results.append({**life, "signals": sigs})
+            # Attach scores (cheap — derived from same history+signals)
+            cat_root = (latest.get("category_path") or [None])[0] or latest.get("category")
+            category_sellers = 0
+            if cat_root:
+                cs = await db.products.distinct(
+                    "seller",
+                    {"$or": [{"category_path": cat_root}, {"category": cat_root}],
+                     "seller": {"$ne": None}},
+                )
+                category_sellers = len(cs)
+            scored = compute_product_scores(
+                latest, history, life["lifecycle_status"],
+                signals=sigs_by_key.get(pk, []),
+                same_category_sellers=category_sellers,
+            )
+            results.append({
+                **life,
+                "signals": sigs,
+                "demand": scored["demand"],
+                "competition": scored["competition"],
+                "risk": scored["risk"],
+                "opportunity": scored["opportunity"],
+                "market_context": scored["market_context"],
+            })
             if len(results) >= limit:
                 break
         return {"items": results, "count": len(results)}

@@ -12,6 +12,7 @@ import Dynamics from "@/pages/Dynamics";
 import Watchlist from "@/pages/Watchlist";
 import Lifecycle from "@/pages/Lifecycle";
 import Signals from "@/pages/Signals";
+import Opportunities from "@/pages/Opportunities";
 
 function App() {
     useEffect(() => {
@@ -26,6 +27,7 @@ function App() {
                         <Route path="/" element={<Dashboard />} />
                         <Route path="/dashboard" element={<Navigate to="/" replace />} />
                         <Route path="/watchlist" element={<Watchlist />} />
+                        <Route path="/opportunities" element={<Opportunities />} />
                         <Route path="/lifecycle" element={<Lifecycle />} />
                         <Route path="/signals" element={<Signals />} />
                         <Route path="/products" element={<Products />} />
