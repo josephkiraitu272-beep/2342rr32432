@@ -6,15 +6,20 @@ import {
     Clock,
     Puzzle,
     LineChart,
+    Bell,
+    ListFilter,
+    Activity,
 } from "lucide-react";
 
 const NAV = [
     { to: "/", label: "Огляд", icon: LayoutDashboard, end: true },
+    { to: "/watchlist", label: "Watchlist", icon: ListFilter },
+    { to: "/lifecycle", label: "Lifecycle", icon: Activity },
+    { to: "/signals", label: "Сигнали", icon: Bell },
     { to: "/products", label: "Товари", icon: Boxes },
     { to: "/dynamics", label: "Динаміка", icon: LineChart },
     { to: "/sellers", label: "Продавці", icon: Users },
     { to: "/history", label: "Історія", icon: Clock },
-    { to: "/install", label: "Розширення", icon: Puzzle },
 ];
 
 export default function Layout() {

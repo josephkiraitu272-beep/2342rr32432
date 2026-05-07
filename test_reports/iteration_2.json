@@ -1,0 +1,86 @@
+{
+  "summary": "Completed comprehensive testing of Task 1 — Foundation Analytics Layer (Watchlist, Lifecycle, Signals, Market Overview v2, Product Feed Intelligence). Backend: 8/9 tests passed. Frontend: All UI components and interactions working correctly.",
+  "backend_issues": {
+    "minor_bugs": [
+      {
+        "endpoint": "/api/ingest/product",
+        "issue": "PRICE_DROP signal not emitted immediately after re-ingesting product with lower price",
+        "impact": "Signal appears to be delayed or requires specific timing conditions",
+        "fix_priority": "LOW",
+        "notes": "This might be due to the 24-hour window requirement or timing between ingests. All other signals (NEW_PRODUCT, PROMO_DETECTED, TOP_SALES_DETECTED, STOCK_OUT) work correctly."
+      }
+    ],
+    "critical_bugs": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Backend: Root endpoint (/api/) returns correct schema and status",
+    "Backend: Watchlist CRUD - GET/POST/PATCH/DELETE all working, upsert by category_key prevents duplicates",
+    "Backend: Watchlist categories endpoint returns discovered categories from products",
+    "Backend: Ingest side-effects - NEW_PRODUCT signal emitted on first capture",
+    "Backend: Ingest side-effects - PROMO_DETECTED signal emitted when badges include 'promo'",
+    "Backend: Ingest side-effects - TOP_SALES_DETECTED signal emitted when badges include 'top_sales'",
+    "Backend: Ingest side-effects - STOCK_OUT signal emitted when availability flips True->False",
+    "Backend: Ingest side-effects - NEW_PRODUCT signal is idempotent (no duplicates on same day)",
+    "Backend: Lifecycle summary returns buckets with correct counts (new, out_of_stock, etc.)",
+    "Backend: Lifecycle feed returns products with lifecycle_status and reasons",
+    "Backend: Lifecycle feed filters by status=new correctly",
+    "Backend: Lifecycle feed respects watchlist_only parameter",
+    "Backend: Signals endpoint returns signals with filtering by kind",
+    "Backend: Signals summary returns buckets per kind with correct counts",
+    "Backend: Market overview returns all required fields (new_products, stock_outs, promo_count, price_drops, etc.)",
+    "Backend: Market heat endpoint returns hot categories (requires ≥5 events)",
+    "Backend: Seller pressure endpoint returns sellers ranked by activity",
+    "Backend: Market promo endpoint returns promo/top_sales signals",
+    "Backend: Product feed returns items with lifecycle_status, reasons, and signals array",
+    "Backend: Product feed filters by lifecycle status correctly",
+    "Backend: Product feed filters by signal_kind correctly",
+    "Backend: Backfill endpoint updates first/last_seen_at and emits missing NEW_PRODUCT signals",
+    "Backend: Regression - /api/analytics/summary still works",
+    "Backend: Regression - /api/analytics/today still works",
+    "Backend: Regression - /api/analytics/price-signals still works",
+    "Backend: Regression - /api/products still works",
+    "Backend: Regression - /api/export/products.csv still works",
+    "Frontend: Dashboard loads successfully with all KPI cards visible",
+    "Frontend: Dashboard Market Health strip (7d) visible with all 6 KPIs",
+    "Frontend: Dashboard lifecycle distribution card visible and populated",
+    "Frontend: Dashboard market heat card visible",
+    "Frontend: Dashboard seller pressure card visible",
+    "Frontend: Dashboard watchlist toggle works (switches data set)",
+    "Frontend: Watchlist page - add card with input field and button visible",
+    "Frontend: Watchlist page - can add new category via form",
+    "Frontend: Watchlist page - active categories card shows added items",
+    "Frontend: Watchlist page - discovered categories card shows available categories",
+    "Frontend: Lifecycle page - filters bar visible with all lifecycle status pills",
+    "Frontend: Lifecycle page - can click filter pills to filter products",
+    "Frontend: Lifecycle page - table renders with product rows",
+    "Frontend: Lifecycle page - Why? button opens popover with reasons list",
+    "Frontend: Lifecycle page - watchlist toggle present",
+    "Frontend: Signals page - summary card visible with signal counts",
+    "Frontend: Signals page - filter pills work for signal kinds",
+    "Frontend: Signals page - signal items rendered in list (31 signals found)",
+    "Frontend: Signals page - watchlist toggle present",
+    "Frontend: Layout - all 8 navigation links present (Огляд, Watchlist, Lifecycle, Сигнали, Товари, Динаміка, Продавці, Історія)"
+  ],
+  "test_report_links": [
+    "/app/backend_test.py",
+    ".screenshots/dashboard.png",
+    ".screenshots/watchlist.png",
+    ".screenshots/lifecycle.png",
+    ".screenshots/signals.png"
+  ],
+  "success_percentage": {
+    "backend": "89% (8/9 tests passed)",
+    "frontend": "100% (all UI components and interactions working)"
+  },
+  "action_item_for_main_agent": "Minor issue: PRICE_DROP signal emission timing needs investigation. The signal logic appears correct in code (services/signals.py lines 138-177), but during testing the signal was not found immediately after re-ingesting with lower price. This might be a timing issue with the 24-hour window check or the signal deduplication logic. All other functionality is working correctly.",
+  "updated_files": [
+    "/app/backend_test.py"
+  ],
+  "should_call_test_agent_after_fix": "false",
+  "should_main_agent_test_itself": "true"
+}

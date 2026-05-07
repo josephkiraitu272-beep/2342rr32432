@@ -27,7 +27,14 @@ import {
     getTopDiscounts,
     getPriceSignals,
     getToday,
+    getMarketOverview,
+    getLifecycleSummary,
+    getMarketHeat,
+    getSellerPressure,
+    LIFECYCLE_LABELS,
+    LIFECYCLE_STYLES,
 } from "@/lib/api";
+import { LifecycleChip } from "@/components/IntelChips";
 
 // Vibrant chart palette — readable, distinct
 const CHART_COLORS = ["#f97316", "#dc2626", "#2563eb", "#16a34a", "#a855f7"];
@@ -169,6 +176,11 @@ export default function Dashboard() {
     const [drops, setDrops] = useState([]);
     const [discounts, setDiscounts] = useState([]);
     const [signals, setSignals] = useState([]);
+    const [marketOv, setMarketOv] = useState(null);
+    const [lifecycle, setLifecycle] = useState(null);
+    const [heat, setHeat] = useState([]);
+    const [pressure, setPressure] = useState([]);
+    const [watchlistOnly, setWatchlistOnly] = useState(false);
     const [loading, setLoading] = useState(true);
     const [refreshedAt, setRefreshedAt] = useState(Date.now());
     const [now, setNow] = useState(Date.now());
@@ -176,7 +188,7 @@ export default function Dashboard() {
     const refresh = async () => {
         setLoading(true);
         try {
-            const [s, td, t, d, p, dr, tdsc, sig] = await Promise.all([
+            const [s, td, t, d, p, dr, tdsc, sig, mov, lc, mh, sp] = await Promise.all([
                 getSummary(),
                 getToday(),
                 getTopSellers(8),
@@ -189,6 +201,14 @@ export default function Dashboard() {
                 getPriceSignals({ window: "24h", minDropPct: 5, limit: 8 }).then(
                     (r) => r.items,
                 ),
+                getMarketOverview({ watchlistOnly, windowDays: 7 }),
+                getLifecycleSummary({ watchlistOnly }),
+                getMarketHeat({ watchlistOnly, windowDays: 7, limit: 8 }).then(
+                    (r) => r.items,
+                ),
+                getSellerPressure({ watchlistOnly, windowDays: 7, limit: 8 }).then(
+                    (r) => r.items,
+                ),
             ]);
             setSummary(s);
             setToday(td);
@@ -198,6 +218,10 @@ export default function Dashboard() {
             setDrops(dr);
             setDiscounts(tdsc);
             setSignals(sig);
+            setMarketOv(mov);
+            setLifecycle(lc);
+            setHeat(mh);
+            setPressure(sp);
             setRefreshedAt(Date.now());
         } catch (e) {
             console.error(e);
@@ -210,7 +234,8 @@ export default function Dashboard() {
         refresh();
         const t = setInterval(refresh, 15000);
         return () => clearInterval(t);
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [watchlistOnly]);
 
     useEffect(() => {
         const t = setInterval(() => setNow(Date.now()), 1000);
@@ -261,6 +286,23 @@ export default function Dashboard() {
                             Захоплено: {fmtSince(sinceCapture)}
                         </span>
                     ) : null}
+                    <label
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[10px] font-mono font-bold uppercase tracking-[0.14em] cursor-pointer transition-colors ${
+                            watchlistOnly
+                                ? "bg-orange-50 border-orange-200 text-orange-700"
+                                : "bg-white border-neutral-200 text-neutral-600 hover:border-orange-300"
+                        }`}
+                        data-testid="dashboard-watchlist-toggle"
+                    >
+                        <input
+                            type="checkbox"
+                            checked={watchlistOnly}
+                            onChange={(e) => setWatchlistOnly(e.target.checked)}
+                            className="hidden"
+                        />
+                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                        Watchlist
+                    </label>
                 </div>
             </div>
 
@@ -383,9 +425,257 @@ export default function Dashboard() {
                 </div>
             </div>
 
+            {/* ======= Market Health v2 ======= */}
+            <div className="space-y-4" data-testid="market-health-block">
+                <div className="flex items-end justify-between flex-wrap gap-3">
+                    <div>
+                        <div className="inline-flex items-center gap-2 text-[11px] font-mono font-bold uppercase tracking-[0.22em] text-orange-600 mb-2">
+                            <span className="w-6 h-px bg-orange-500" />
+                            Market Health · 7 днів
+                        </div>
+                        <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-neutral-950">
+                            Що відбувається на ринку
+                        </h2>
+                    </div>
+                    <Link
+                        to="/lifecycle"
+                        className="text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1"
+                    >
+                        Lifecycle feed <ArrowUpRight size={14} />
+                    </Link>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3" data-testid="market-overview-strip">
+                    <KPI
+                        icon={Package}
+                        label="Нові товари"
+                        value={marketOv?.new_products ?? "—"}
+                        accent="emerald"
+                        testId="mkpi-new"
+                    />
+                    <KPI
+                        icon={Activity}
+                        label="Повернулись"
+                        value={marketOv?.returned_products ?? "—"}
+                        accent="blue"
+                        testId="mkpi-returned"
+                    />
+                    <KPI
+                        icon={Boxes}
+                        label="Зняті"
+                        value={marketOv?.removed_products ?? "—"}
+                        accent="neutral"
+                        testId="mkpi-removed"
+                    />
+                    <KPI
+                        icon={Bell}
+                        label="Закінчились"
+                        value={marketOv?.stock_outs ?? "—"}
+                        accent="rose"
+                        testId="mkpi-stockout"
+                    />
+                    <KPI
+                        icon={Tag}
+                        label="Промо/реклама"
+                        value={marketOv?.promo_count ?? "—"}
+                        accent="orange"
+                        testId="mkpi-promo"
+                    />
+                    <KPI
+                        icon={TrendingDown}
+                        label="Падіння цін"
+                        value={marketOv?.price_drops ?? "—"}
+                        accent="emerald"
+                        testId="mkpi-drops"
+                    />
+                </div>
+
+                <div className="grid lg:grid-cols-12 gap-6">
+                    {/* Lifecycle distribution */}
+                    <div className="lg:col-span-5 guru-card p-6" data-testid="lifecycle-distribution-card">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-950">Lifecycle товарів</h2>
+                                <div className="text-sm text-neutral-500">
+                                    Всього: {lifecycle?.total ?? 0} карток
+                                </div>
+                            </div>
+                            <Link
+                                to="/lifecycle"
+                                className="text-xs font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1"
+                            >
+                                Усі <ArrowUpRight size={12} />
+                            </Link>
+                        </div>
+                        {!lifecycle || lifecycle.total === 0 ? (
+                            <EmptyHint>
+                                Lifecycle з’явиться після перших captures. Розширення фіксує товари
+                                і будує статус автоматично.
+                            </EmptyHint>
+                        ) : (
+                            <ul className="space-y-2" data-testid="lifecycle-buckets">
+                                {Object.entries(lifecycle.buckets || {})
+                                    .filter(([, v]) => v > 0)
+                                    .sort((a, b) => b[1] - a[1])
+                                    .map(([k, v]) => (
+                                        <li
+                                            key={k}
+                                            data-testid={`lifecycle-bucket-${k}`}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white"
+                                        >
+                                            <LifecycleChip status={k} />
+                                            <div className="flex-1 h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+                                                <div
+                                                    className={`h-full ${LIFECYCLE_STYLES[k]?.replace(/text-[^\s]+/g, "").replace(/border-[^\s]+/g, "").replace("bg-", "bg-")}`}
+                                                    style={{
+                                                        width: `${Math.min(100, (v / Math.max(1, lifecycle.total)) * 100)}%`,
+                                                        background: "currentColor",
+                                                        opacity: 0.4,
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className="font-mono font-bold text-neutral-950 text-sm w-12 text-right">
+                                                {v}
+                                            </span>
+                                            <span className="text-[10px] font-mono text-neutral-500 w-10 text-right">
+                                                {Math.round((v / Math.max(1, lifecycle.total)) * 100)}%
+                                            </span>
+                                        </li>
+                                    ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Market Heat — categories with activity */}
+                    <div className="lg:col-span-7 guru-card p-6" data-testid="market-heat-card">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-neutral-950">Market Heat</h2>
+                                <div className="text-sm text-neutral-500">
+                                    Категорії з найвищою активністю · 7 днів
+                                </div>
+                            </div>
+                        </div>
+                        {heat.length === 0 ? (
+                            <EmptyHint>
+                                Heat-карта з’явиться після того, як буде зібрано ≥{" "}
+                                <strong>5 подій</strong> у щонайменше одній категорії за вікно.
+                            </EmptyHint>
+                        ) : (
+                            <ul className="space-y-2" data-testid="market-heat-items">
+                                {heat.map((h, i) => (
+                                    <li
+                                        key={`${h.category}-${i}`}
+                                        data-testid={`heat-row-${i}`}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-neutral-200 bg-white hover:border-orange-300 transition-colors"
+                                    >
+                                        <span className="font-mono text-xs text-neutral-400 w-6">
+                                            {String(i + 1).padStart(2, "0")}
+                                        </span>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="font-bold text-neutral-950 truncate">
+                                                {h.category}
+                                            </div>
+                                            <div className="text-[11px] text-neutral-500 font-mono mt-0.5 flex flex-wrap gap-x-2">
+                                                {h.new ? <span>+{h.new} нові</span> : null}
+                                                {h.price_drops ? (
+                                                    <span>·  ↓{h.price_drops} ціна</span>
+                                                ) : null}
+                                                {h.promo ? <span>· {h.promo} промо</span> : null}
+                                                {h.stock_outs ? (
+                                                    <span>· {h.stock_outs} OOS</span>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                        <span className="font-mono font-bold text-orange-600 text-sm">
+                                            {h.events}
+                                        </span>
+                                        <span className="text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
+                                            подій
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+
+                {/* Seller pressure */}
+                <div className="guru-card p-6" data-testid="seller-pressure-card">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <h2 className="text-xl font-bold text-neutral-950">
+                                Тиск продавців
+                            </h2>
+                            <div className="text-sm text-neutral-500">
+                                Хто найактивніший: нові лістинги, падіння цін, промо · 7 днів
+                            </div>
+                        </div>
+                        <Link
+                            to="/sellers"
+                            className="text-sm font-semibold text-orange-600 hover:text-orange-700 inline-flex items-center gap-1"
+                        >
+                            Усі продавці <ArrowUpRight size={14} />
+                        </Link>
+                    </div>
+                    {pressure.length === 0 ? (
+                        <EmptyHint>
+                            Як тільки буде зафіксовано подію по продавцю (нова картка, промо,
+                            падіння ціни), він з’явиться тут.
+                        </EmptyHint>
+                    ) : (
+                        <div className="overflow-x-auto" data-testid="seller-pressure-list">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="text-left text-[10px] uppercase tracking-[0.2em] text-neutral-500 font-mono">
+                                        <th className="py-2 pr-4">Продавець</th>
+                                        <th className="py-2 pr-4 text-right">Подій</th>
+                                        <th className="py-2 pr-4 text-right">Унік. товарів</th>
+                                        <th className="py-2 pr-4 text-right">Нові</th>
+                                        <th className="py-2 pr-4 text-right">Ціна ↓</th>
+                                        <th className="py-2 pr-4 text-right">Промо</th>
+                                        <th className="py-2 text-right">OOS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pressure.map((s, i) => (
+                                        <tr
+                                            key={s.seller}
+                                            className="border-t border-neutral-100"
+                                            data-testid={`pressure-row-${i}`}
+                                        >
+                                            <td className="py-2.5 pr-4 font-bold text-neutral-950 max-w-[280px] truncate">
+                                                {s.seller}
+                                            </td>
+                                            <td className="py-2.5 pr-4 text-right font-mono font-bold text-orange-600">
+                                                {s.events}
+                                            </td>
+                                            <td className="py-2.5 pr-4 text-right font-mono text-neutral-700">
+                                                {s.unique_products}
+                                            </td>
+                                            <td className="py-2.5 pr-4 text-right font-mono text-emerald-700">
+                                                {s.new_products || "—"}
+                                            </td>
+                                            <td className="py-2.5 pr-4 text-right font-mono text-emerald-700">
+                                                {s.price_drops || "—"}
+                                            </td>
+                                            <td className="py-2.5 pr-4 text-right font-mono text-orange-700">
+                                                {s.promo || "—"}
+                                            </td>
+                                            <td className="py-2.5 text-right font-mono text-rose-700">
+                                                {s.stock_outs || "—"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             <div className="grid lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-5 guru-card p-6" data-testid="distribution-card">
-                    <div className="flex items-center justify-between mb-1">
+                <div className="lg:col-span-5 guru-card p-6" data-testid="distribution-card">                    <div className="flex items-center justify-between mb-1">
                         <h2 className="text-xl font-bold text-neutral-950">Розподіл</h2>
                         <Boxes size={16} className="text-orange-500" strokeWidth={2.2} />
                     </div>

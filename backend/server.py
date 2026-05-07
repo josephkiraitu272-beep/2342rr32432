@@ -26,6 +26,9 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from urllib.parse import urlparse
 
+from services.signals import build_signals_for_ingest
+from services.intelligence_api import make_router as make_intelligence_router
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -201,6 +204,80 @@ async def _record_price_snapshots(docs: List[Dict[str, Any]]) -> None:
             logging.getLogger("guru").exception("price_snapshots insert failed: %s", e)
 
 
+async def _stamp_lifecycle_dates(docs: List[Dict[str, Any]]) -> None:
+    """Maintain first_seen_at / last_seen_at on `products` docs (Task 1 lifecycle layer).
+
+    For each ingested doc:
+      - first_seen_at = MIN(existing first_seen, current captured_at)
+      - last_seen_at  = current captured_at (always overwritten)
+    Done via a tiny update_many keyed by product_key (cheap with our index).
+    """
+    now_ts = now_iso()
+    for d in docs:
+        pk = d.get("product_key")
+        if not pk:
+            continue
+        # Find any earlier first_seen_at for this product_key
+        prior = await db.products.find_one(
+            {"product_key": pk, "first_seen_at": {"$ne": None}},
+            {"_id": 0, "first_seen_at": 1},
+            sort=[("first_seen_at", 1)],
+        )
+        first_seen = (prior or {}).get("first_seen_at") or d["captured_at"]
+        await db.products.update_many(
+            {"product_key": pk},
+            {"$set": {"first_seen_at": first_seen, "last_seen_at": now_ts}},
+        )
+        d["first_seen_at"] = first_seen
+        d["last_seen_at"] = now_ts
+
+
+async def _emit_market_signals(docs: List[Dict[str, Any]]) -> None:
+    """For each ingested doc, compute signals against its full history and persist them.
+
+    Idempotent per (kind, product_key, day) via `dedup_key` unique index.
+    """
+    if not docs:
+        return
+    all_sigs: List[Dict[str, Any]] = []
+    for d in docs:
+        pk = d.get("product_key")
+        if not pk:
+            continue
+        # Full history (ASC) — includes the row we just inserted in price_snapshots.
+        cur = (
+            db.price_snapshots.find({"product_key": pk}, {"_id": 0})
+            .sort("captured_at", 1)
+        )
+        history = await cur.to_list(2000)
+        is_first_seen = len(history) <= 1
+        last_before = None
+        if len(history) >= 2:
+            try:
+                last_before = datetime.fromisoformat(
+                    history[-2].get("captured_at").replace("Z", "+00:00")
+                )
+            except Exception:
+                last_before = None
+        sigs = build_signals_for_ingest(
+            d, history, is_first_seen=is_first_seen, last_capture_before_now=last_before
+        )
+        all_sigs.extend(sigs)
+
+    if not all_sigs:
+        return
+    # Upsert by dedup_key for idempotency.
+    for s in all_sigs:
+        try:
+            await db.market_signals.update_one(
+                {"dedup_key": s["dedup_key"]},
+                {"$setOnInsert": s},
+                upsert=True,
+            )
+        except Exception as e:
+            logging.getLogger("guru.signals").warning("signal upsert failed: %s", e)
+
+
 # ---------- Routes ----------
 
 @api_router.get("/")
@@ -218,6 +295,8 @@ async def ingest_product(payload: ProductIn, _: bool = Depends(require_extension
     doc = _normalize_product(payload)
     await db.products.insert_one(dict(doc))
     await _record_price_snapshots([doc])
+    await _stamp_lifecycle_dates([doc])
+    await _emit_market_signals([doc])
     return {"ok": True, "id": doc["id"], "product_key": doc["product_key"]}
 
 
@@ -234,6 +313,8 @@ async def ingest_products(payload: IngestProductsRequest, _: bool = Depends(requ
     except Exception as e:
         logging.getLogger("guru").warning("products insert_many partial: %s", e)
     await _record_price_snapshots(docs)
+    await _stamp_lifecycle_dates(docs)
+    await _emit_market_signals(docs)
     return {
         "ok": True,
         "inserted": len(docs),
@@ -1211,6 +1292,8 @@ async def export_products_xlsx(
 # ---------- Mount ----------
 
 app.include_router(api_router)
+# Task 1 — Foundation Analytics Layer (watchlist, lifecycle, signals, market overview v2, feed)
+app.include_router(make_intelligence_router(db, require_extension_key))
 
 app.add_middleware(
     CORSMiddleware,
@@ -1236,11 +1319,22 @@ async def ensure_indexes():
         await db.products.create_index("captured_at")
         await db.products.create_index("seller")
         await db.products.create_index("product_key")
+        await db.products.create_index("first_seen_at")
+        await db.products.create_index("last_seen_at")
         await db.products.create_index([("title", "text")])
         await db.price_snapshots.create_index("product_key")
         await db.price_snapshots.create_index("captured_at")
         await db.price_snapshots.create_index([("product_key", 1), ("captured_at", 1)])
         await db.pages.create_index("captured_at")
+        # Task 1 collections
+        await db.market_signals.create_index("captured_at")
+        await db.market_signals.create_index("kind")
+        await db.market_signals.create_index("product_key")
+        await db.market_signals.create_index("seller")
+        await db.market_signals.create_index("category_path")
+        await db.market_signals.create_index("dedup_key", unique=True)
+        await db.watchlists.create_index("category_key")
+        await db.watchlists.create_index("enabled")
         logger.info("Indexes ensured")
     except Exception as e:
         logger.warning("Index creation skipped: %s", e)
