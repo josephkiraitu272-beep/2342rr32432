@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="uk">
+    <head>
+        <meta charset="utf-8" />
+        <title>Guru</title>
+        <link rel="stylesheet" href="popup.css" />
+    </head>
+    <body>
+        <div class="guru-popup">
+            <header class="ph">
+                <div class="ph-brand">
+                    <div class="ph-logo">G</div>
+                    <div>
+                        <div class="ph-title">Guru</div>
+                        <div class="ph-sub">analytics</div>
+                    </div>
+                </div>
+                <div id="status" class="ph-status" data-state="idle">
+                    <span class="dot"></span><span id="status-text">…</span>
+                </div>
+            </header>
+
+            <section class="card">
+                <div class="card-head">
+                    <div class="card-label">Поточна сторінка</div>
+                    <div id="site-tag" class="site-tag">—</div>
+                </div>
+                <div id="page-title" class="page-title">Відкрийте Rozetka або Epicentr</div>
+                <div id="page-meta" class="page-meta"></div>
+            </section>
+
+            <button id="capture-btn" class="cta" data-testid="popup-capture-btn">
+                <span>Зібрати дані з цієї сторінки</span>
+                <span class="cta-arrow">→</span>
+            </button>
+
+            <button id="test-btn" class="cta cta-ghost" data-testid="popup-test-btn">
+                <span>Тест підключення</span>
+                <span class="cta-arrow">⚡</span>
+            </button>
+
+            <div id="error-box" class="error-box" hidden>
+                <div class="error-label">Остання помилка</div>
+                <div id="error-text" class="error-text"></div>
+            </div>
+
+            <section class="metrics">
+                <div class="metric">
+                    <div class="metric-label">За сьогодні</div>
+                    <div class="metric-value" id="captured-today">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Усього</div>
+                    <div class="metric-value" id="captured-total">0</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">У черзі</div>
+                    <div class="metric-value" id="queue-size">0</div>
+                </div>
+            </section>
+
+            <button id="flush-btn" class="cta cta-ghost" data-testid="popup-flush-btn" hidden>
+                <span>Надіслати чергу зараз</span>
+                <span class="cta-arrow">↑</span>
+            </button>
+
+            <details class="settings">
+                <summary>Налаштування</summary>
+                <label>
+                    <span>Backend URL</span>
+                    <input id="backend-url" type="text" placeholder="https://…" />
+                </label>
+                <label>
+                    <span>API key</span>
+                    <input id="api-key" type="text" />
+                </label>
+                <label class="row">
+                    <input id="enabled" type="checkbox" checked />
+                    <span>Розширення увімкнене</span>
+                </label>
+                <button id="save-btn" class="cta cta-secondary" data-testid="popup-save-btn">
+                    Зберегти
+                </button>
+            </details>
+
+            <a id="dashboard-link" class="open-dashboard" target="_blank" data-testid="popup-dashboard-link">
+                Відкрити дашборд →
+            </a>
+        </div>
+        <script src="popup.js"></script>
+    </body>
+</html>

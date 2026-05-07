@@ -1,0 +1,130 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --guru-bg: #fafafa;
+    --guru-surface: #ffffff;
+    --guru-ink: #0a0a0a;
+    --guru-text: #0a0a0a;
+    --guru-text-muted: #525252;
+    --guru-border: #e5e5e5;
+    --guru-border-strong: #171717;
+
+    /* Accent palette — used purposefully on data, status, sources */
+    --guru-accent: #f97316;       /* orange-500 — primary CTA / active nav */
+    --guru-accent-hover: #ea580c; /* orange-600 */
+    --guru-rozetka: #dc2626;      /* red-600 — Rozetka brand */
+    --guru-epicentr: #ca8a04;     /* yellow-600 darkened — Epicentr */
+    --guru-success: #16a34a;
+    --guru-info: #2563eb;
+    --guru-violet: #7c3aed;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--guru-bg);
+    color: var(--guru-text);
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv01";
+}
+
+code,
+.font-mono {
+    font-family: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+    font-feature-settings: "zero", "ss01";
+}
+
+::selection {
+    background: #fde68a;
+    color: #0a0a0a;
+}
+
+@layer base {
+    :root {
+        --background: 0 0% 98%;
+        --foreground: 0 0% 4%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 4%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 4%;
+        --primary: 25 95% 53%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 96%;
+        --secondary-foreground: 0 0% 4%;
+        --muted: 0 0% 96%;
+        --muted-foreground: 0 0% 32%;
+        --accent: 25 95% 53%;
+        --accent-foreground: 0 0% 100%;
+        --destructive: 0 72% 51%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 90%;
+        --input: 0 0% 90%;
+        --ring: 25 95% 53%;
+        --radius: 0.5rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+.guru-card {
+    background: var(--guru-surface);
+    border: 1px solid var(--guru-border);
+    border-radius: 0.75rem;
+}
+
+.guru-card-strong {
+    background: var(--guru-surface);
+    border: 1px solid var(--guru-border-strong);
+    border-radius: 0.75rem;
+}
+
+.guru-card-dark {
+    background: #0a0a0a;
+    color: #fff;
+    border-radius: 0.75rem;
+}
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-up {
+    animation: fade-up 0.4s ease-out both;
+}
+
+@keyframes pulse-dot {
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.4);
+    }
+}
+
+.pulse-dot {
+    animation: pulse-dot 1.4s ease-in-out infinite;
+}

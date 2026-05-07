@@ -1,0 +1,201 @@
+/* Гуру overlay — black & white */
+.guru-overlay {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 320px;
+    z-index: 2147483647;
+    font-family: "Plus Jakarta Sans", -apple-system, "Segoe UI", sans-serif;
+    color: #0a0a0a;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid #0a0a0a;
+    box-shadow: 0 12px 32px -10px rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    padding: 14px 14px 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+.guru-overlay.guru-min {
+    width: auto;
+    padding: 10px 12px;
+}
+.guru-overlay-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.guru-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: -0.01em;
+}
+.guru-brand .guru-logo {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    background: #0a0a0a;
+    color: #fff;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.guru-brand .guru-source {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: #737373;
+}
+.guru-actions {
+    display: flex;
+    gap: 4px;
+}
+.guru-actions button {
+    appearance: none;
+    background: transparent;
+    border: 1px solid #d4d4d4;
+    color: #404040;
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    line-height: 1;
+}
+.guru-actions button:hover {
+    background: #0a0a0a;
+    color: #fff;
+    border-color: #0a0a0a;
+}
+.guru-overlay-body .guru-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 5px 0;
+    font-size: 12px;
+}
+.guru-overlay-body .guru-row .guru-label {
+    color: #525252;
+}
+.guru-overlay-body .guru-row .guru-value {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 700;
+    color: #0a0a0a;
+}
+.guru-bar {
+    display: flex;
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 8px 0 6px;
+    background: #f5f5f5;
+}
+.guru-bar > span {
+    display: block;
+    height: 100%;
+}
+.guru-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 11px;
+    color: #525252;
+    margin-top: 4px;
+}
+.guru-legend .guru-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+.guru-legend strong {
+    color: #0a0a0a;
+    font-family: "JetBrains Mono", monospace;
+    margin-right: 2px;
+}
+.guru-cta {
+    appearance: none;
+    width: 100%;
+    margin-top: 10px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    background: #0a0a0a;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    border: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.12s ease;
+}
+.guru-cta:hover {
+    background: #262626;
+}
+.guru-cta[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+.guru-toast {
+    margin-top: 8px;
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: #525252;
+}
+.guru-toast[data-state="ok"] {
+    color: #0a0a0a;
+    font-weight: 700;
+}
+.guru-toast[data-state="err"] {
+    color: #0a0a0a;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* Inline product badges */
+.guru-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+    vertical-align: middle;
+    border: 1px solid #0a0a0a;
+    background: #fff;
+    color: #0a0a0a;
+}
+.guru-badge.b-rank {
+    background: #0a0a0a;
+    color: #fff;
+}
+.guru-badge.b-fulfilled {
+    background: #fff;
+    color: #0a0a0a;
+}
+.guru-badge.b-ad {
+    background: #0a0a0a;
+    color: #fff;
+}
+.guru-badge.b-top {
+    background: #fff;
+    color: #0a0a0a;
+}

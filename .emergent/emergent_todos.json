@@ -1,0 +1,26 @@
+[
+  {
+    "content": "Backend: /api/analytics/today + extend /summary with total_sellers & avg_discount_overall",
+    "status": "completed"
+  },
+  {
+    "content": "Frontend: Dashboard — KPI header strip + 'Сьогодні зібрано' data loop + monitoring pills",
+    "status": "completed"
+  },
+  {
+    "content": "Frontend: ProductHistoryModal — Market Insights rules engine card",
+    "status": "completed"
+  },
+  {
+    "content": "Frontend: Roadmap Hub — ACTIVE / LABS / ROADMAP segmentation",
+    "status": "completed"
+  },
+  {
+    "content": "Frontend: Deep-link /products/:key (auto-open modal, sharable URL)",
+    "status": "completed"
+  },
+  {
+    "content": "Test + screenshots + final cleanup (24/24 PASSED)",
+    "status": "completed"
+  }
+]

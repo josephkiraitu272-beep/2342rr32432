@@ -1,0 +1,61 @@
+{
+  "manifest_version": 3,
+  "name": "Guru — аналітика Розетки та Епіцентру",
+  "short_name": "Guru",
+  "version": "0.4.0",
+  "description": "Guru: робоча панель аналітика Rozetka та Epicentr. Перехоплює картки товарів, ціни, продавців, рейтинги. Schema v1.0 + persistent ingest queue.",
+  "permissions": ["storage", "activeTab", "scripting", "cookies", "alarms"],
+  "host_permissions": [
+    "https://rozetka.com.ua/*",
+    "https://*.rozetka.com.ua/*",
+    "https://epicentrk.ua/*",
+    "https://*.epicentrk.ua/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Guru",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://rozetka.com.ua/*", "https://*.rozetka.com.ua/*"],
+      "js": [
+        "lib/selectors.js",
+        "lib/schema.js",
+        "content/common.js",
+        "content/overlay.js",
+        "adapters/base.adapter.js",
+        "adapters/rozetka.adapter.js",
+        "content/runtime.js"
+      ],
+      "css": ["content/overlay.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    },
+    {
+      "matches": ["https://epicentrk.ua/*", "https://*.epicentrk.ua/*"],
+      "js": [
+        "lib/selectors.js",
+        "lib/schema.js",
+        "content/common.js",
+        "content/overlay.js",
+        "adapters/base.adapter.js",
+        "adapters/epicentr.adapter.js",
+        "content/runtime.js"
+      ],
+      "css": ["content/overlay.css"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

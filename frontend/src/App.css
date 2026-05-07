@@ -1,0 +1,9 @@
+.App {
+    min-height: 100vh;
+    background-color: var(--guru-bg);
+}
+
+.App a {
+    color: inherit;
+    text-decoration: none;
+}

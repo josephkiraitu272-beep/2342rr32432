@@ -1,0 +1,39 @@
+{
+  "summary": "First-iteration backend testing for Призма (Prizma) ingest+analytics API. Created /app/backend/tests/test_prizma_api.py (pytest, 27 tests across 8 classes) covering root, X-Extension-Api-Key auth enforcement, all /api/ingest/* endpoints (single, batch, page, cf-session), /api/products listing+filters+search+pagination, discount_percent calculation, /api/analytics/{summary,top-sellers,source-distribution}, /api/pages, CORS preflight + actual POST, and MongoDB _id leak prevention. All 27 tests passed against the public REACT_APP_BACKEND_URL.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_prizma_api.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "captured_at is stored as ISO string (now_iso) but Pydantic ProductOut.captured_at is typed as datetime — slight inconsistency; harmless because the field is never used for response serialization (raw dict returned), but could trip future typed responses.",
+    "last_24h count uses string comparison on captured_at ISO — works because ISO 8601 sorts lexicographically only when timezone offset is uniform; current code always writes UTC isoformat so it is OK, but documenting/asserting UTC would harden it.",
+    "/api/analytics/source-distribution computes 'Rozetka власні' via seller in [None,'Rozetka','ROZETKA'] — heuristic; consider an explicit flag/marketplace field for accuracy.",
+    "ingest_products inserts via insert_many without ordered=False; a single bad doc would fail the entire batch. Pydantic validation upfront mitigates this, but ordered=False would be safer.",
+    "No index hints on db.products (source, captured_at, seller, title regex) — listing/aggregation will degrade once data grows; add indexes before scaling.",
+    "EXTENSION_API_KEY has a hardcoded fallback default ('prizma_dev_key_2026') in server.py — fine for dev, but in prod the app should fail fast if env var missing rather than fallback to a known key."
+  ],
+  "updated_files": [
+    "/app/backend/tests/__init__.py",
+    "/app/backend/tests/test_prizma_api.py",
+    "/app/memory/test_credentials.md",
+    "/app/test_reports/iteration_1.json",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "not tested (per request: backend only)"},
+  "test_credentials": "X-Extension-Api-Key: prizma_dev_key_2026 (recorded in /app/memory/test_credentials.md)",
+  "seed_data_creation": "Tests inserted TEST_-prefixed products (1 single + 4 batch + 1 NoOldPrice = 6), 1 page snapshot, 1 cf_session per run via /api/ingest/* — used to validate persistence, discount calc, search, and analytics aggregation. No cleanup endpoint exists; data accumulates across runs but is harmless.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All backend endpoints are healthy. The pytest file at /app/backend/tests/test_prizma_api.py is the canonical regression suite — reuse it. BASE_URL is read from REACT_APP_BACKEND_URL_TEST env or falls back to the hardcoded preview URL; prefer setting the env var. CORS is wide-open ('*'), preflight passes. Discount calc verified (~33.3% on price=100/old=150). MongoDB _id is properly excluded in /api/products and /api/pages. No frontend testing performed — main agent requested backend only.",
+  "rca of the issue": "N/A — no issues found."
+}

@@ -1,0 +1,112 @@
+{
+  "theme": "light",
+  "archetype": "4 (Swiss & High-Contrast) + Custom Analytical Organic",
+  "mood": "Sharp, precise, trustworthy, analytical, warm techno",
+  "colors": {
+    "background": "#F8FAFC",
+    "surface_cards": "#FFFFFF",
+    "primary": "#064E3B",
+    "accent_1": "#0D9488",
+    "accent_2": "#EA580C",
+    "text_primary": "#0F172A",
+    "text_secondary": "#475569",
+    "success": "#16A34A",
+    "danger": "#DC2626",
+    "border": "#E2E8F0",
+    "charts": [
+      "#064E3B",
+      "#0D9488",
+      "#EA580C",
+      "#0F172A",
+      "#94A3B8"
+    ]
+  },
+  "typography": {
+    "font_family": {
+      "headings": "'Plus Jakarta Sans', sans-serif",
+      "body": "'Plus Jakarta Sans', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900",
+      "h2": "text-2xl sm:text-3xl font-bold tracking-tight text-slate-900",
+      "h3": "text-xl font-semibold tracking-tight text-slate-900",
+      "body": "text-base text-slate-600 leading-relaxed",
+      "small": "text-sm text-slate-500",
+      "metrics": "text-3xl font-mono font-bold tracking-tight text-slate-900",
+      "badge": "text-xs font-mono font-bold tracking-widest uppercase"
+    }
+  },
+  "spacing_and_layout": {
+    "grid_system": "Asymmetrical Bento Grid. grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-6",
+    "padding": "Generous spacing: p-6 or p-8 inside cards. No cramped elements.",
+    "alignment": "Strictly left-aligned typography. No centered paragraphs.",
+    "border_radius": "rounded-xl for cards, rounded-md for internal badges"
+  },
+  "components": {
+    "landing_features_grid": {
+      "description": "6-card grid with squarish colored numbered tabs exactly as requested.",
+      "badges_sequence": [
+        "bg-emerald-700 text-white",
+        "bg-teal-600 text-white",
+        "bg-orange-600 text-white",
+        "bg-teal-600 text-white",
+        "bg-emerald-700 text-white",
+        "bg-orange-600 text-white"
+      ],
+      "card_style": "bg-white shadow-sm hover:shadow-md transition-shadow border border-slate-200 rounded-xl p-6"
+    },
+    "dashboard_cards": {
+      "description": "Clean white cards, sharp or slightly rounded corners. Left aligned data.",
+      "style": "bg-white border border-slate-200 rounded-xl p-6 shadow-sm"
+    },
+    "product_badges": {
+      "description": "Pill or sharp-edged. Font: JetBrains Mono.",
+      "variants": {
+        "#1": "bg-slate-100 text-slate-900 font-mono text-xs px-2 py-1 rounded",
+        "F (Фулфілмент)": "bg-teal-50 text-teal-700 border border-teal-200 font-mono text-xs px-2 py-1 rounded",
+        "#1 РЕКЛАМА": "bg-orange-100 text-orange-700 border border-orange-200 font-mono text-xs px-2 py-1 rounded font-bold"
+      }
+    },
+    "top_sellers_list": {
+      "description": "Лідери продажів: Ranked list of sellers. Bold font for seller name.",
+      "marker_style": "Left border marker (e.g. border-l-4) with assigned color per seller."
+    },
+    "metrics_arrows": {
+      "price_down": "text-red-600 flex items-center gap-1 (↓)",
+      "saves_up": "text-green-600 flex items-center gap-1 (↑)",
+      "reviews_up": "text-green-600 flex items-center gap-1 (↑)"
+    },
+    "chrome_extension_popup": {
+      "dimensions": "w-[320px] max-h-[500px]",
+      "style": "Compact version of the dashboard. bg-slate-50. Sticky header. Primary CTA spanning full width."
+    },
+    "in_page_overlay": {
+      "description": "Floating panel in bottom right of Rozetka/Epicentr pages.",
+      "style": "fixed bottom-4 right-4 backdrop-blur-xl bg-white/95 border border-slate-200 shadow-xl rounded-xl p-4 w-[300px] z-[9999]"
+    }
+  },
+  "motion": {
+    "hover": "transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:shadow-md",
+    "charts": "Recharts animation duration 500ms ease-out"
+  },
+  "images_and_media": {
+    "hero_background_abstract": {
+      "url": "https://images.unsplash.com/photo-1723056659484-34539cb3eb70?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjY2NzF8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGdyZWVuJTIwZ2VvbWV0cmljJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3NzgxNTY4NDR8MA&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract geometric patterns in teal, orange, and white for landing page background layer"
+    },
+    "analytics_mockup_placeholder": {
+      "url": "https://images.pexels.com/photos/34069/pexels-photo.jpg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Data analysis dashboard on a laptop for generic placeholders"
+    }
+  },
+  "development_instructions": [
+    "Install and use 'Plus Jakarta Sans' for standard text, 'JetBrains Mono' for numbers, metrics, and badges.",
+    "Use Recharts for the source distribution Donut/Bar chart (Топ продажів, Реклама, Rozetka, Інші, Фулфілмент), strictly using the colors array from this file.",
+    "Add data-testid attributes to all interactive elements, buttons, and metrics cards (e.g., data-testid='scrape-button', data-testid='metric-avg-price').",
+    "For the Landing page 'Можливості' grid, strictly follow the color sequence for the numbered square tabs: 1 (emerald-700), 2 (teal-600), 3 (orange-600), 4 (teal-600), 5 (emerald-700), 6 (orange-600).",
+    "All text content must be in Ukrainian (e.g., 'Зведення по сторінці', 'Лідери продажів', 'Відгуки', 'Збереження').",
+    "Product table needs a filter for Rozetka/Epicentr.",
+    "Ensure Extension Popup matches exactly 320x500 resolution constraints, showing connection status, collected items counters, 'Зібрати дані' button, and link to dashboard."
+  ]
+}
